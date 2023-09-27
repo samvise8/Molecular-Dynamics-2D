@@ -35,7 +35,7 @@ contains
     real(dp), intent(out) :: K
 
     real(dp), dimension(:,:), allocatable :: F, F1
-    real(dp), dimension(:,:, :), allocatable :: stress_T
+
     integer :: err
 
     allocate(F(2,Natoms), stat=err)
