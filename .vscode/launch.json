@@ -1,0 +1,23 @@
+{
+    // Usare IntelliSense per informazioni sui possibili attributi.
+    // Al passaggio del mouse vengono visualizzate le descrizioni degli attributi esistenti.
+    // Per altre informazioni, visitare: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "by-gdb",
+            "request": "attach",
+            "name": "Attach(gdb)",
+            "program": "${fileBasenameNoExtension}",
+            "cwd": "${workspaceRoot}",
+            "processId": 1234
+        },
+        {
+            "type": "by-gdb",
+            "request": "launch",
+            "name": "Launch(gdb)",
+            "program": "${fileBasenameNoExtension}",
+            "cwd": "${workspaceRoot}"
+        }
+    ]
+}

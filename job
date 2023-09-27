@@ -1,0 +1,21 @@
+#!/bin/sh
+
+mkdir data
+rm -fp data/U.dat 
+rm -fp data/D.dat
+touch data/U.dat
+touch data/D.dat
+
+for val in  160 165 170 175 180 185 190 195 200 205 
+do
+  echo $val
+  sed 's/@TT/'$val'/' input.in > input # sed è una funzione per sostituire testo
+  ./md < input
+  cp data/coord.xyz data/coords_$val.xyz
+  cp data/av.dat data/av_$val.dat
+  cp data/g.dat data/g_$val.dat
+  cp data/R2.dat data/R2_$val.dat
+  awk '{if(NR==1){print '"$val"', $4, $6}}' data/av_$val.dat >> data/U.dat
+  awk '{if(NR==3){print '"$val"', $2}}' data/av_$val.dat >> data/D.dat
+done
+
