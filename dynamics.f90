@@ -51,7 +51,7 @@ contains
 
     K=kinetic(v1)
 
-    deallocate(F,F1,stress_T)  
+    deallocate(F,F1)  
 
   end subroutine verlet
 
