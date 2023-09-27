@@ -369,7 +369,8 @@ subroutine init_velocities_couette()
 
   function gk_viscosity(Sxy, dt, nstep) result(viscosity)
 
-    integer i, j, nstep
+    integer, intent (in) :: nstep
+    integer i, j
     real(dp), intent (in) :: Sxy(nstep),dt
     real(dp) :: viscosity, sum, sacf(nstep)
     

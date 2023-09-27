@@ -74,13 +74,13 @@ Module forces
     integer :: m, l, Natoms, k, p
     type(TNode), pointer :: it
 
-    allocate(stress_T(2, 2, Natoms),stat=err)
-
-    if (err.ne.0) STOP 'ALLOCATION ERROR'
-
     !integer, external :: omp_get_thread_num
 
     Natoms = par%Natoms
+
+   allocate(stress_T(2, 2, Natoms),stat=err)
+
+    if (err.ne.0) STOP 'ALLOCATION ERROR'
     ! Virial should be corrected due to cutoff potential
     UU = 0.0_dp
     virial = 0.0_dp
