@@ -2,7 +2,7 @@ Module forces
   use constants
   use list
   use boxes
-  use parameters, only : mass
+  use parameters, only : mass, Area
   implicit none
   private
 
@@ -127,6 +127,8 @@ Module forces
 
                Fm(:) = Fm(:) - (tmp-Fc) * rij(:)
                UU = UU + (4.0_dp*(rm12-rm6)-Uc)
+               
+               !isotropic pressure = trace of stress tensor
                virial = virial + dot_product(rij,Fm(:))
                
                ! Update the stress tensor elements
@@ -137,7 +139,9 @@ Module forces
                      stress_T(p, k, m) = stress_T(p, k, m) + v(k, m) * v(p, m)*mass
                   end do
                end do
-
+               
+               !evaluate the off diagonal term of stress tensor
+               Sxy= Sxy + stress_T(1, 2, m)
                
              endif
 
@@ -150,15 +154,13 @@ Module forces
         F(:,m) = Fm(:)
      end do
 
-   !evaluate the off diagonal term of stress tensor
-     do m=1, Natoms
-         Sxy= Sxy + stress_T(1, 2, m)
-      end do
+
 
 
      F = F * par%eps/sg2
      UU = UU * 0.5_dp * par%eps
      virial = virial * 0.5_dp * par%eps/sg2
+     Sxy = Sxy/Area
 
    deallocate(stress_T)
 

@@ -306,9 +306,13 @@ subroutine init_velocities_couette()
        !write(113,*) n*dt, U+K
        !write(123,*) n*dt, U
        !write(133,*) n*dt, P
-       !write(134,*) n*dt, Sxy(n)
+       write(134,*) n*dt, Sxy2(n)
        kine(n)=K
        Uav = Uav + U/nstep2
+
+
+       
+
 
        if (scaling) then 
           lambda = sqrt((Natoms*kb*Temp)/K)
@@ -319,7 +323,19 @@ subroutine init_velocities_couette()
 
        x = xf     
        eta=etaf
+      
+      dR = dR + reshape(v ,(/ 2*Natoms /))
+      dR = dR + reshape(vf,(/ 2*Natoms /))
+      R2 = dot_product(dR,dR)*dt*dt/Natoms/4.0_dp
+      write(102,*) n*dt, R2
 
+      Pav = Pav + P/nstep2
+      Kav = Kav + K/nstep2
+      Uav = Uav + U/nstep2
+      R = x(:,Natoms/2) - R0
+      Rcm = Rcm + R/nstep2
+      R2 = dot_product(R,R)
+      Diff = Diff + R2/nstep2
    
     end do
 
@@ -345,12 +361,19 @@ subroutine init_velocities_couette()
     write(*,*) '|<K> - K0| =', abs(K0-sum(kine)/nstep2)
     write(*,*) 'sqrt(<K^2>-<K>^2) =',sqrt( (sum((kine-(sum(kine)/nstep2))**2))/nstep2)
     write(*,*) '<U> =', Uav
-    write(*,*) 'Viscosity =', viscosity
+    write(*,*) 'Shear Viscosity Coefficient =', viscosity
     write(*,'(a16,3x)',advance='NO') 'Simulation time:'
     call write_clock()
 
 
     deallocate(xf,vf,etaf)
+
+    open(102,file='data/av.dat')
+    write(102,'(9x,3(a3,ES14.6,2x))') 'Ek=',Kav,'U=',Uav,'P=',Pav
+    write(102,*) 'Rcm=',Rcm
+    write(102,*) 'Diffusivity=',Diff/dt,'nm^2/fs'
+    write(102,*) 'Shear Viscosity Coefficient=',viscosity !!!
+    close(102)
 
   end subroutine nve_sim
 
@@ -374,19 +397,22 @@ subroutine init_velocities_couette()
     real(dp), intent (in) :: Sxy(nstep),dt
     real(dp) :: viscosity, sum, sacf(nstep)
     
-    sum =0.0_dp
     viscosity = 0.0_dp
 
-    do j=1,nstep
+    do j=1,nstep-1
+    sum =0.0_dp
       do i=1, nstep-j
         sum = sum + Sxy(i+j)*Sxy(i)
       end do
       sacf(j) = sum / (nstep - j)  !stress autocorrelation function
     end do
 
-    do i = 1, nstep
-      viscosity = viscosity + sacf(i) * dt
+
+    do i = 1, nstep - 1
+        viscosity = viscosity + (sacf(i) + sacf(i + 1)) * dt / 2.0
     end do
+
+
     viscosity = viscosity/nstep
 
   end function gk_viscosity
