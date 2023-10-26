@@ -9,7 +9,7 @@ module dynamics
   public :: verlet_nh15  
 
   interface  
-    subroutine Tforces(x, v, F,UU,virial, Sxy)
+    subroutine Tforces(x, v, F,UU,virial, Sxy, xpt)
       use precision, only : dp
       real(dp), dimension(:,:), intent(in) :: x
       real(dp), dimension(:,:), intent(in) :: v
@@ -17,6 +17,7 @@ module dynamics
       real(dp), intent(out) :: UU
       real(dp), intent(out) :: virial
       real(dp), intent(out) :: Sxy
+      real(dp), intent(out) :: xpt
     end subroutine TForces
   end interface
 
@@ -24,12 +25,13 @@ contains
 
   ! ---------------------------------------------------------------------------------
   ! BASIC VERLET ALGORITHM 
-  subroutine verlet(x,v,x1,v1,U,virial,Sxy,dt, forces, K)
+  subroutine verlet(x,v,x1,v1,U,virial,Sxy,xpt,dt, forces, K)
     real(dp), dimension(:,:), intent(in) :: x, v
     real(dp), dimension(:,:), intent(out) :: x1, v1
     real(dp), intent(out) :: U
     real(dp), intent(out) :: virial
     real(dp), intent(out) :: Sxy
+    real(dp), intent(out) :: xpt
     real(dp), intent(in) :: dt
     procedure(Tforces) :: forces
     real(dp), intent(out) :: K
@@ -43,10 +45,10 @@ contains
     if (err.ne.0) STOP 'ALLOCATION ERROR'
 
 
-    call forces(x,v,F,U,virial, Sxy)
+    call forces(x,v,F,U,virial, Sxy,xpt)
     x1 = x + v * dt + 0.5_dp*dt*dt*F/Mass
 
-    call forces(x1,v1,F1,U,virial, Sxy)
+    call forces(x1,v1,F1,U,virial, Sxy,xpt)
     v1 = v + 0.5_dp * (F+F1)/Mass * dt
 
     K=kinetic(v1)
@@ -59,7 +61,7 @@ contains
 
   ! ---------------------------------------------------------------------------------
   ! VERLET ALGORITHM + Nose-Hoover with 5 levels chain
-  subroutine verlet_nh15(x,v,U,virial,Sxy,dt,forces,K,K0,eta,etaf,xf,vf)
+  subroutine verlet_nh15(x,v,U,virial,Sxy,xpt,dt,forces,K,K0,eta,etaf,xf,vf)
  
     real(dp), dimension(:,:), intent(in) :: x, v
     real(dp), dimension(:,:), intent(out) :: xf, vf
@@ -69,6 +71,7 @@ contains
     real(dp), intent(out) :: U
     real(dp), intent(out) :: virial
     real(dp), intent(out) :: Sxy
+    real(dp), intent(out) :: xpt
     real(dp), intent(in) :: K0
     real(dp), intent(inout) :: K
     real(dp), intent(in) :: dt
@@ -94,13 +97,13 @@ contains
 
     if (err.ne.0) STOP 'ALLOCATION ERROR'
 
-    call forces(x,v,F,U,virial,Sxy)
+    call forces(x,v,F,U,virial,Sxy,xpt)
 
     xf=x + v*dt + ((F/Mass)-eta(:,:,1)*v)*dt*dt*0.5_dp
     vf_half=v + dt*0.5_dp*((F/Mass) - eta(:,:,1)*v)
 
     
-    call forces(xf,vf,F1,U,virial,Sxy)
+    call forces(xf,vf,F1,U,virial,Sxy, xpt)
     
 
     K_first=kinetic(v)

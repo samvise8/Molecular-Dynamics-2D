@@ -183,7 +183,9 @@ subroutine init_velocities_couette()
     real(dp) :: R(2),R0(2)  ! For diffusivity 
     real(dp), allocatable :: dR(:)  ! For diffusivity 
     real(dp) :: R2, R02, Diff, Rcm(2)
-    real(dp) :: viscosity
+    real(dp) :: viscosity, xpt1, xpt
+
+    real(dp), dimension(:), allocatable :: viscosityHelft
 
     Pav = 0.0_dp
     Uav = 0.0_dp
@@ -200,12 +202,14 @@ subroutine init_velocities_couette()
     allocate(etaf(2,Natoms,5),stat=err)
     allocate(Sxy1(nstep1),stat=err)
     allocate(Sxy2(nstep2),stat=err)
+    allocate(viscosityHelft(nstep2), stat=err)
     
     allocate(xf(2,Natoms),stat=err)
     allocate(vf(2,Natoms),stat=err)
 
 
     allocate(kine(nstep2),stat=err)
+
     
     if (err /= 0) STOP 'ALLOCATION ERROR'
     
@@ -227,6 +231,7 @@ subroutine init_velocities_couette()
     open(123,file='data/U.dat')
     open(133,file='data/P.dat')
     open(134,file='data/Sxy.dat')
+    open(135,file='data/viscosityhelft.dat')
     
 
     ! init time
@@ -245,9 +250,9 @@ subroutine init_velocities_couette()
        endif
 
        if (nose_hoover) then
-         call verlet_nh15(x,v,U,virial,Sxy1(n),dt,lj,K,K0,eta,etaf,xf,vf)
+         call verlet_nh15(x,v,U,virial,Sxy1(n),xpt,dt,lj,K,K0,eta,etaf,xf,vf)
        else  
-         call verlet(x,v,xf,vf,U,virial,Sxy1(n),dt,lj,K)
+         call verlet(x,v,xf,vf,U,virial,Sxy1(n),xpt,dt,lj,K)
        end if
 
        call update_boxes(x,xf)
@@ -289,15 +294,21 @@ subroutine init_velocities_couette()
        endif
        
        if (nose_hoover) then
-         call verlet_nh15(x,v,U,virial,Sxy2(n),dt,lj,K,K0,eta,etaf,xf,vf)
+         call verlet_nh15(x,v,U,virial,Sxy2(n),xpt,dt,lj,K,K0,eta,etaf,xf,vf)
        else  
-         call verlet(x,v,xf,vf,U,virial,Sxy2(n),dt,lj,K)
+         call verlet(x,v,xf,vf,U,virial,Sxy2(n),xpt,dt,lj,K)
        end if
+
        
 
        call update_boxes(x,xf)
  
        P = (Natoms*kb*Temp + virial/2.d0)/Area
+      
+        if (n==1) then
+          xpt1=xpt
+        end if
+       viscosityHelft(n) = (((xpt - xpt1)/Natoms)**2)/(2*kb*Temp*Area)
 
        if (mod(n,print_interval) == 0) then
          write(*,'(i6,a,i6,3x,4(a3,ES14.6,2x))') n,'/',nstep2,'Ek=',K,'U=',U,'E=',K+U,'P=',P
@@ -307,11 +318,12 @@ subroutine init_velocities_couette()
        !write(123,*) n*dt, U
        !write(133,*) n*dt, P
        write(134,*) n*dt, Sxy2(n)
+       write(135,*) n*dt, viscosityHelft(n)
        kine(n)=K
        Uav = Uav + U/nstep2
 
 
-       
+
 
 
        if (scaling) then 
@@ -352,6 +364,7 @@ subroutine init_velocities_couette()
     close(125)
     close(106)
     close(134)
+    close(135)
 
     viscosity = gk_viscosity(Sxy2, dt, nstep2)*Area/(kb*Temp)   ! Green Kubo viscosity
 

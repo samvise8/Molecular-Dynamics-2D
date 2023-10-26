@@ -56,7 +56,7 @@ Module forces
   end subroutine init_lj
 
   ! Lennard jones forces
-  subroutine lj(x, v, F, UU, virial, Sxy)
+  subroutine lj(x, v, F, UU, virial, Sxy, xpt)
     real(dp), dimension(:,:), intent(in) :: x
     real(dp), dimension(:,:), intent(in) :: v
     real(dp), dimension(:,:), intent(out) :: F
@@ -64,6 +64,7 @@ Module forces
     real(dp), intent(out) :: UU
     real(dp), intent(out) :: virial
     real(dp), intent(out) :: Sxy
+    real(dp), intent(out) :: xpt
 
 
     real(dp), dimension(:,:,:), allocatable :: stress_T
@@ -130,6 +131,8 @@ Module forces
                
                !isotropic pressure = trace of stress tensor
                virial = virial + dot_product(rij,Fm(:))
+
+               xpt = xpt + x(1,m)*v(2,m)
                
                ! Update the stress tensor elements
                do k = 1, 2
